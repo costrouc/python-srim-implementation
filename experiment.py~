@@ -1,0 +1,3 @@
+from Collections import namedtuple
+
+Point = NamedTuple('Position', 'x y z')
