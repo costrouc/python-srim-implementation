@@ -1,19 +1,17 @@
-from Collections import namedtuple
-
 tollerance = 1E-8
 
 class Element:
     """
     Representation of an element
     """
-    def __init__(self, name, atomicNumber, mass)
+    def __init__(self, name, atomicNumber, mass):
         self.name = name
         self.atomicNumber = atomicNumber
         self.mass = mass
     
 class Compound:
     """
-    Representation of an compound in a material. It is assumed
+    Representation of an compound in a target. It is assumed
     that the stochiometry of the compound is normalized to one.
     """
     def __init__(self, stochiometry, elements, thresholdDisplacement):
@@ -23,15 +21,15 @@ class Compound:
         
 class Layer:
     """
-    Representation of a layer in a material
+    Representation of a layer in a target
     """
     def __init__(self, compound):
         self.thickness = 0.5 # [L] cm
         self.compound = compound
 
-class Material:
+class Target:
     """
-    Representation of a material being shot at
+    Representation of a target being shot at
     """
     def __init__(self, layers):
         self.layers = layers
@@ -42,12 +40,12 @@ class Material:
 
     def isPositionIn(self, position):
         pointIsIn = True
-        if (position[0] < tollerance || position[0] > self.totalThickness - tollerance):
+        if (position[0] < tollerance or position[0] > self.totalThickness - tollerance):
             pointIsIn = False
         return pointIsIn
 
-    def get_thresholdDisplacement(self, ion):
-        layer = material.getLayerAtPosition(ion.position)
+    def get_thresholdDisplacement(self, ion, target):
+        layer = target.getLayerAtPosition(ion.position)
         return layer.compound.get_thresholdDisplacment(ion.element)
         
 class Ion:
@@ -71,9 +69,9 @@ class Ion:
         print "Element"
         print self.element
 
-def shootIon(ion, material):
+def shootIon(ion, target):
     """
-    A function to simulate one ion runing into a material
+    A function to simulate one ion runing into a target
     """
     ionQueue = []
     ionQueue.append(ion)
@@ -81,22 +79,24 @@ def shootIon(ion, material):
     while (len(ionQueue) != 0):
         currentIon = ionQueue.pop()
         
-        SimulateElectronicStopping(currentIon, material)
+        SimulateElectronicStopping(currentIon, target)
 
-        if (material.isPointIn(currentIon.point) == True):
-            SimulateNuclearStopping(currentIon, material, ionQueue)
+        if (target.isPointIn(currentIon.point) == True):
+            SimulateNuclearStopping(currentIon, target, ionQueue)
+
+    return "One Ion Cascade Complete"
         
-def runSimulation(ion, material, numIons = 10, genStats = True):
+def runSimulation(ion, target, numIons = 10, genStats = True):
     """
-    Simulates shooting numIons into a material
+    Simulates shooting numIons into a target
     """
     simulationStatistics = []
     
     for i in range(numIons):
-        stat = shootIon(ion, material)
+        stat = shootIon(ion, target)
         simulationStatistics.append(stat)
         
-    return pass
+    return
         
 def calcFreePathLength():
     """
@@ -105,37 +105,37 @@ def calcFreePathLength():
     """
     return 0.1
 
-def calcElectronicEnergyLoss(ion, material):
+def calcElectronicEnergyLoss(ion, target):
     """
     Calculates the energy lost of an ion while traveling
-    through the material to electrons
+    through the target to electrons
     """
-    pathLength = calcFreePathLength(ion, material)
+    pathLength = calcFreePathLength(ion, target)
 
     energyLoss = 1.0
     
     return (energyLoss, pathLength)
     
-def SimulateElectronicStopping(ion, material):
+def SimulateElectronicStopping(ion, target):
     """
-    Simulates the movement of an ion within a material losing
-    energy to the electron clouds of the material. Returns
+    Simulates the movement of an ion within a target losing
+    energy to the electron clouds of the target. Returns
     true if the ion is still traveling
     """
-    energyLoss, pathLength = calcElectronicEnergyLoss(ion, material)
+    energyLoss, pathLength = calcElectronicEnergyLoss(ion, target)
     
     ion.moveIonByDistance(pathLength)
     ion.reduceEnergyBy(energyLoss)
     
     return 
 
-def SimluateNuclearStopping(ion, material, ionQueue):
+def SimluateNuclearStopping(ion, target, ionQueue):
     """
     Simluates the collision of an ion with an element within
-    the material. If a collision occurs 
+    the target. If a collision occurs 
     """
 
-    atom = selectCollisionAtom(ion, material)
+    atom = selectCollisionAtom(ion, target)
     # traj = [[position], [velocity]]
     traj1, traj2 = calcCollisionTrajectory(ion, atom)
 
@@ -144,26 +144,26 @@ def SimluateNuclearStopping(ion, material, ionQueue):
     
     ion.set_trajectory(traj2)
     
-    if (ion.get_energy() < material.get_thresholdDisplacement(ion)):
+    if (ion.get_energy() < target.get_thresholdDisplacement(ion)):
         ionQueue.append(ion)
 
-    if (newIon.get_energy() < material.get_thresholdDisplacement(newIon)):
+    if (newIon.get_energy() < target.get_thresholdDisplacement(newIon)):
         ionQueue.append(ion)
 
-def selectCollisionAtom(ion, material):
+def selectCollisionAtom(ion, target):
     """
-    Based on the location of the ion within the material an atom
+    Based on the location of the ion within the target an atom
     is chosen with a probablility equal to the stochiometry of the
     layer. This is an amorphous assumption
     """
     from numpy.random import rand
     X = rand()
         
-    layer = material.get_layerByPosition(ion.position)
+    layer = target.get_layerByPosition(ion.position)
     compound = layer.compound
 
     for i in range(len(compound.stochiometry)):
-        if (X < compound.stochiometry[i] || i +1 == len(compound.stochiometry)):
+        if (X < compound.stochiometry[i] or i +1 == len(compound.stochiometry)):
             return compound.elements[i]
         else:
             X = X - compound.stochiometry[i]
