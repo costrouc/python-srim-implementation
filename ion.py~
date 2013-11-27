@@ -1,0 +1,36 @@
+"""
+A module to represent an Ion Class
+"""
+
+from element import Element
+
+class Ion:
+    """
+    Representation of an ion
+    """
+    def __init___(self, element):
+        self.position = [0.0, 0.0, 0.0]
+        self.velocity = [1.0, 0.0, 0.0]
+        self.element = element
+
+    def set_trajectory(self, trajectory):
+        self.position = trajectory[0]
+        self.velocity = trajectory[1]
+
+    def get_energy(self):
+        """
+        Kinetic Energy of an ion (1/2)mv^2
+        """
+        import math
+        
+        v = math.sqrt(velocity[0]**2, velocity[0]**2, velocity[0]**2)
+        return 0.5 * element.mass * v**2
+        
+        
+    def __str__(self):
+        print "Position:"
+        print self.position
+        print "Velocity:"
+        print self.velocity
+        print "Element"
+        print self.element
