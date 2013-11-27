@@ -14,7 +14,12 @@ class Compound:
         self.elements = elements
         self.thresholdDisplacement = thresholdDisplacement
 
-    def get_thresholdDisplacement(self, element):
+    def __str__(self):
+        return  "Stociometry: " + str(self.stochiometry) + "\n" +\
+                "Elements: " + str(self.elements) + "\n" + \
+                "Threshold Displacements: " + str(self.thresholdDisplacement)
+        
+    def thresholdDisplacementByElement(self, element):
         thresholdDisplacement = 0.0
         
         for i in range(len(self.elements)):
@@ -30,9 +35,14 @@ class Layer:
     thickness t [nm]
     compound Compound(args)
     """
-    def __init__(self, compound):
-        self.thickness = 10000000
+    def __init__(self, thickness, compound):
+        self.thickness = thickness
         self.compound = compound
+
+    def __str__(self):
+        return "Thickness: %f" % (self.thickness) + \
+               "\nCompound:\n" + \
+               str(self.compound)
 
 class Target:
     """
@@ -51,9 +61,9 @@ class Target:
             positionIsIn = False
         return positionIsIn
 
-    def get_thresholdDisplacement(self, ion, target):
-        layer = target.get_layerByPosition(ion.position)
-        return layer.compound.get_thresholdDisplacement(ion.element)
+    def thresholdDisplacement(self, ion):
+        layer = self.get_layerByPosition(ion.position)
+        return layer.compound.thresholdDisplacementByElement(ion.element)
 
     def get_layerByPosition(self, position):
         x = position[0]
@@ -63,4 +73,5 @@ class Target:
                 return layer
             else:
                 x = x - layer.thickness
+
         return None

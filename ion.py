@@ -17,11 +17,15 @@ class Ion:
     energy e (electron volts eV)
     element Element(args)
     """
+    id_counter = 0
+    
     def __init__(self, position, direction, energy, element):
         self.position = position
         self.direction = direction
         self.energy = energy
         self.element = element
+        self.id = Ion.id_counter
+        Ion.id_counter += 1
 
     def set_trajectory(self, trajectory):
         """
@@ -38,9 +42,7 @@ class Ion:
         self.position = self.position + pathLength * self.direction
             
     def __str__(self):
-        print "Position:"
-        print self.position
-        print "Velocity:"
-        print self.velocity
-        print "Element"
-        print self.element
+        return "Position:" + str(self.position) + \
+               "Direction:" + str(self.direction) + \
+               "Energy: " + str(self.energy) + \
+               "Element" + str(self.element)

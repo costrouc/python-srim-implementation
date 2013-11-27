@@ -5,13 +5,14 @@ Module that runs the SRIM simulation
 from ion import Ion
 from element import Element
 from target import Target, Layer, Compound
+from statistics import IonStatistics
 
 import numpy as np
 from numpy.linalg import norm
 
 tollerance = 1E-8
 
-def shootIon(ion, target):
+def shootIon(ion, target, ionStatistics):
     """
     A function to simulate one ion runing into a target
     """
@@ -20,6 +21,8 @@ def shootIon(ion, target):
 
     while (len(ionQueue) != 0):
         currentIon = ionQueue.pop()
+
+        ionStatistics.saveIonState(currentIon)
         
         SimulateElectronicStopping(currentIon, target)
 
@@ -32,13 +35,12 @@ def runSimulation(ion, target, numIons = 10, genStats = True):
     """
     Simulates shooting numIons into a target
     """
-    simulationStatistics = []
+    ionStatistics = IonStatistics()
     
     for i in range(numIons):
-        stat = shootIon(ion, target)
-        simulationStatistics.append(stat)
+        shootIon(ion, target, ionStatistics)
         
-    return
+    ionStatistics.to_csv('temp.csv')
 
 # Electronic Stopping Calculations    
 def SimulateElectronicStopping(ion, target):
@@ -87,10 +89,10 @@ def SimulateNuclearStopping(ion, target, ionQueue):
 
     ion1, ion2 = calcCollision(ion, atom)
     
-    if (ion1.energy < target.get_thresholdDisplacement(ion1, target)):
+    if (ion1.energy > target.thresholdDisplacement(ion1)):
         ionQueue.append(ion1)
 
-    if (ion2.energy < target.get_thresholdDisplacement(ion2, target)):
+    if (ion2.energy > target.thresholdDisplacement(ion2)):
         ionQueue.append(ion2)
 
 def selectCollisionAtom(ion, target):
@@ -118,9 +120,6 @@ def calcCollision(ion, atom):
     The resulting trajectories is determined using the magic angle
     formula.
     """
-    print "1 collision"
-    
-    # Trajectory: [[position], [velocity]]
     totalEnergy = ion.energy
     
     randUnitDirection = np.random.rand(3)
@@ -145,7 +144,7 @@ if __name__ == "__main__":
     ionGe = Ion(position, direction, energy, Ge)
 
     compoundNa = Compound([1.0], [Na], [100])
-    layerNa = Layer(compoundNa)
+    layerNa = Layer(1000000, compoundNa)
     target = Target([layerNa])
 
-    shootIon(ionGe, target)
+    runSimulation(ionGe, target, numIons = 100)
