@@ -6,6 +6,9 @@ from ion import Ion
 from element import Element
 from target import Target, Layer, Compound
 
+import numpy as np
+from numpy.linalg import norm
+
 tollerance = 1E-8
 
 def shootIon(ion, target):
@@ -47,7 +50,11 @@ def SimulateElectronicStopping(ion, target):
     energyLoss, pathLength = calcElectronicEnergyLoss(ion, target)
     
     ion.moveIonByDistance(pathLength)
-    ion.reduceEnergyBy(energyLoss)
+
+    if (ion.energy <= energyLoss):
+        ion.energy = 0.0
+    else:
+        ion.energy = ion.energy - energyLoss
     
     return 
 
@@ -77,19 +84,14 @@ def SimulateNuclearStopping(ion, target, ionQueue):
     """
 
     atom = selectCollisionAtom(ion, target)
-    # traj = [[position], [velocity]]
-    traj1, traj2 = calcCollisionTrajectory(ion, atom)
 
-    newIon = Ion(atom)
-    newIon.set_trajectory(traj1)
+    ion1, ion2 = calcCollision(ion, atom)
     
-    ion.set_trajectory(traj2)
-    
-    if (ion.get_energy() < target.get_thresholdDisplacement(ion, target)):
-        ionQueue.append(ion)
+    if (ion1.energy < target.get_thresholdDisplacement(ion1, target)):
+        ionQueue.append(ion1)
 
-    if (newIon.get_energy() < target.get_thresholdDisplacement(newIon, target)):
-        ionQueue.append(ion)
+    if (ion2.energy < target.get_thresholdDisplacement(ion2, target)):
+        ionQueue.append(ion2)
 
 def selectCollisionAtom(ion, target):
     """
@@ -109,24 +111,38 @@ def selectCollisionAtom(ion, target):
         else:
             X = X - compound.stochiometry[i]
         
-def calcCollisionTrajectory(ion, atom):
+def calcCollision(ion, atom):
     """
     Given an incoming ion and collision atom calculate the resulting
     trajectories of the ions after collision. Energy is conserved.
     The resulting trajectories is determined using the magic angle
     formula.
     """
+    print "1 collision"
+    
     # Trajectory: [[position], [velocity]]
-    position = ion.position
-    velocity = ion.velocity
-
-    return [[position, 0.5 * velocity], [position, 0.5 * velocity]]
+    totalEnergy = ion.energy
+    
+    randUnitDirection = np.random.rand(3)
+    randUnitDirection = randUnitDirection / norm(randUnitDirection, 2)
+    newIon = Ion(ion.position, randUnitDirection, 0.5 * totalEnergy, atom)
+    
+    randUnitDirection = np.random.rand(3)
+    randUnitDirection = randUnitDirection / norm(randUnitDirection, 2)
+    ion.direction = randUnitDirection
+    ion.energy = 0.5 * totalEnergy
+    
+    return (ion, newIon)
     
 if __name__ == "__main__":
     Na = Element("Na", 11, 22.978)
     Ge = Element("Ge", 32, 72.64)
-    
-    ionGe = Ion(Ge)
+
+    position = np.array([0.0, 0.0, 0.0])
+    direction = np.array([1.0, 0.0, 0.0])
+    energy = 1E5 #eV
+        
+    ionGe = Ion(position, direction, energy, Ge)
 
     compoundNa = Compound([1.0], [Na], [100])
     layerNa = Layer(compoundNa)

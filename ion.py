@@ -4,16 +4,23 @@ A module to represent an Ion Class
 
 import math
 import numpy as np
+from numpy.linalg import norm
 
 from element import Element
 
 class Ion:
     """
     Representation of an ion
+    input:
+    position [x, y, z]
+    direction [u, v, w] (unit vector)
+    energy e (electron volts eV)
+    element Element(args)
     """
-    def __init__(self, element):
-        self.position = np.array([0.0, 0.0, 0.0])
-        self.velocity = np.array([1.0, 0.0, 0.0])
+    def __init__(self, position, direction, energy, element):
+        self.position = position
+        self.direction = direction
+        self.energy = energy
         self.element = element
 
     def set_trajectory(self, trajectory):
@@ -21,38 +28,14 @@ class Ion:
         Replaces the current position and velocity of the ion
         """
         self.position = trajectory[0]
-        self.velocity = trajectory[1]
+        self.direction = trajectory[1] / norm(trajectory[1], 2)
 
     def moveIonByDistance(self, pathLength):
         """
         Given the current velocity direction
         displace the atom a given distance 
         """
-        v = math.sqrt(self.velocity[0]**2 + self.velocity[0]**2 + self.velocity[0]**2)
-        
-        unitVelocity = self.velocity / v
-
-        self.position = self.position + pathLength * unitVelocity
-
-    def get_energy(self):
-        """
-        Kinetic Energy of an ion (1/2)mv^2
-        """
-        v = math.sqrt(self.velocity[0]**2 + self.velocity[0]**2 + self.velocity[0]**2)
-        return 0.5 * self.element.mass * v**2
-
-    def reduceEnergyBy(self, energyLoss):
-        """
-        Reduces the energy of the ion by a set number
-        if the energy is greater than the total energy of the
-        ion it will simply set it to zero
-        """
-        totalEnergy = self.get_energy() - energyLoss
-
-        if (totalEnergy <= 0.0):
-            totalEnergy = 0.0
-        else:
-            self.velocity = 0.25 * self.velocity
+        self.position = self.position + pathLength * self.direction
             
     def __str__(self):
         print "Position:"

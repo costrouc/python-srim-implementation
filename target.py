@@ -26,9 +26,12 @@ class Compound:
 class Layer:
     """
     Representation of a layer in a target
+    input:
+    thickness t [nm]
+    compound Compound(args)
     """
     def __init__(self, compound):
-        self.thickness = 0.5 # [L] cm
+        self.thickness = 10000000
         self.compound = compound
 
 class Target:

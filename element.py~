@@ -1,8 +1,0 @@
-class Element:
-    """
-    Representation of an element
-    """
-    def __init__(self, name, atomicNumber, mass):
-        self.name = name
-        self.atomicNumber = atomicNumber
-        self.mass = mass
