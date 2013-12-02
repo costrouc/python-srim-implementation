@@ -67,7 +67,7 @@ class Target:
 
     def get_layerByPosition(self, position):
         x = position[0]
-
+        
         for layer in self.layers:
             if (x <= layer.thickness):
                 return layer

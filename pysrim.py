@@ -1,15 +1,29 @@
-"""
-Module that runs the SRIM simulation
+"""PySrim - A program to simulate the implantations of ions in matter through a monte-carlo simulation
+
+Usage:
+  pysrim.py [--numIons=<num>] [--elementIon=<elem>]
+  pysrim.py (-h | --help)
+  pysrim.py --version
+
+Options:
+  -h --help               Show this screen.
+  --version               Show version.
+  --numIons=<num>         Number of Ions in Simulation [default: 10]
+  --elementIon=<element>  The element of the Ion being shot [default: Ge]
 """
 
 from ion import Ion
-from element import Element
+from element import Element, ElementTable
 from target import Target, Layer, Compound
 from statistics import IonStatistics
 
 import numpy as np
 import math
+import copy
+from numpy import dot
 from numpy.linalg import norm
+from docopt import docopt
+from mpi4py import MPI
 
 tollerance = 1E-8
 
@@ -17,8 +31,10 @@ def shootIon(ion, target, ionStatistics):
     """
     A function to simulate one ion runing into a target
     """
+    testIon = copy.deepcopy(ion)
+    
     ionQueue = []
-    ionQueue.append(ion)
+    ionQueue.append(testIon)
     
     while (len(ionQueue) != 0):
         currentIon = ionQueue.pop()
@@ -39,7 +55,6 @@ def runSimulation(ion, target, numIons = 10, genStats = True):
     ionStatistics = IonStatistics()
     
     for i in range(numIons):
-        print "Shooting Ion %d" % (i)
         shootIon(ion, target, ionStatistics)
         
     ionStatistics.to_csv('temp.csv')
@@ -77,7 +92,7 @@ def calcFreePathLength(ion, target):
     Calculates the distance the given ion travels until it
     hits the nucleus of an atom
     """
-    return 6.0
+    return max(math.sqrt(norm(ion.velocity, 2)), 5.0)
 
 # Nuclear Stopping Calculations
 def SimulateNuclearStopping(ion, target, ionQueue):
@@ -104,7 +119,8 @@ def selectCollisionAtom(ion, target):
     """
     from numpy.random import rand
     X = rand()
-        
+
+    
     layer = target.get_layerByPosition(ion.position)
     compound = layer.compound
 
@@ -122,39 +138,65 @@ def calcCollision(ion, atom):
     formula.
     """
 
-    print atom.mass
-    print ion.mass
-
     E0 = ion.energy()
 
     V0 = ion.velocity
 
     weight = np.random.rand()
 
-    unitDirection = np.random.rand(3)
+    unitDirection = np.random.rand(3) - 0.5
     unitDirection = unitDirection / norm(unitDirection, 2)
+
+    while (dot(unitDirection, ion.velocity) < 0):
+        unitDirection = np.random.rand(3) - 0.5
+        unitDirection = unitDirection / norm(unitDirection, 2)
+            
     V1 = math.sqrt((2 * weight * E0) / ion.mass) * unitDirection
-    V2 = (ion.mass / atom.mass) * (V0 - V1)
+
+    unitDirection = np.random.rand(3) - 0.5
+    unitDirection = unitDirection / norm(unitDirection, 2)
+
+    while (dot(unitDirection, ion.velocity) < 0):
+        unitDirection = np.random.rand(3) - 0.5
+        unitDirection = unitDirection / norm(unitDirection, 2)
+            
+    V2 = math.sqrt((2 * (1 - weight) * E0) / atom.mass) * unitDirection
 
     newIon = Ion(ion.position, V2 , atom)
     ion.velocity = V1
 
-    print E0 - ion.energy() - newIon.energy()
-    
     return (ion, newIon)
     
 if __name__ == "__main__":
-    Na = Element("Na", 11, 22.978)
-    Ge = Element("Ge", 32, 72.64)
+    arguments = docopt(__doc__, version='PySrim 0.1')
 
+    numIons = int(arguments['--numIons'])
+
+    element_table = ElementTable()
+    ionElement = element_table.get_elementbysymbol(arguments['--elementIon'])
+
+    # Define the Ion
     position = np.array([0.0, 0.0, 0.0])
+    energy = 1E6 #eV
+    velocity = math.sqrt(energy / ionElement.mass) * np.array([1.0, 0.0, 0.0])
+    ion = Ion(position, velocity, ionElement)
 
-    energy = 1E8 #eV
-    velocity = math.sqrt(energy / Ge.mass) * np.array([1.0, 0.0, 0.0])
-    ionGe = Ion(position, velocity, Ge)
-
+    # Define the target material
+    Na = element_table.get_elementbysymbol('Na')
     compoundNa = Compound([1.0], [Na], [15])
     layerNa = Layer(1000000, compoundNa)
     target = Target([layerNa])
 
-    runSimulation(ionGe, target, numIons = 10)
+    # Initialize MPI Enviroment
+    comm = MPI.COMM_WORLD #Wow that was simple
+    size = comm.Get_size()
+    rank = comm.Get_rank()
+
+    # We split the job among all the nodes running the job
+    myNumIons = numIons / size
+    if ((numIons % size) > rank):
+        myNumIons += 1
+
+    print "My rank %d of %d running %d ions" % (rank, size, myNumIons)
+        
+    runSimulation(ion, target, numIons = myNumIons)
