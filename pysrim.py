@@ -57,7 +57,7 @@ def runSimulation(ion, target, numIons = 10, genStats = True):
     for i in range(numIons):
         shootIon(ion, target, ionStatistics)
         
-    ionStatistics.to_csv('temp.csv')
+    return ionStatistics
 
 # Electronic Stopping Calculations    
 def SimulateElectronicStopping(ion, target):
@@ -199,4 +199,10 @@ if __name__ == "__main__":
 
     print "My rank %d of %d running %d ions" % (rank, size, myNumIons)
         
-    runSimulation(ion, target, numIons = myNumIons)
+    ionStatistics = runSimulation(ion, target, numIons = myNumIons)
+
+    ionStatistics.consolidate(comm)
+    
+    if (rank == 0):
+        ionStatistics.to_csv('temp.csv')
+
