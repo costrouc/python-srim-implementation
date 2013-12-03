@@ -1,6 +1,7 @@
 import pandas as pd
 import mpi4py as MPI
 
+
 class IonStatistics:
     """
     A datastore for ion data
@@ -42,3 +43,4 @@ class IonStatistics:
                                   self.velocities[job][i][2]))
         outputFile.close()
         
+

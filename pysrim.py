@@ -1,7 +1,7 @@
 """PySrim - A program to simulate the implantations of ions in matter through a monte-carlo simulation
 
 Usage:
-  pysrim.py [--numIons=<num>] [--elementIon=<elem>]
+  pysrim.py [--numIons=<num>] [--elementIon=<elem>] [--ionEnergy=<eV>] [-o FILE]
   pysrim.py (-h | --help)
   pysrim.py --version
 
@@ -10,6 +10,8 @@ Options:
   --version               Show version.
   --numIons=<num>         Number of Ions in Simulation [default: 10]
   --elementIon=<element>  The element of the Ion being shot [default: Ge]
+  --ionEnergy=<keV>       The energy for each ion [default: 1000000]
+  -o                      Output filename [default: temp.csv]
 """
 
 from ion import Ion
@@ -173,12 +175,13 @@ if __name__ == "__main__":
     numIons = int(arguments['--numIons'])
 
     element_table = ElementTable()
-    ionElement = element_table.get_elementbysymbol(arguments['--elementIon'])
 
     # Define the Ion
+    ionElement = element_table.get_elementbysymbol(arguments['--elementIon'])
+    
     position = np.array([0.0, 0.0, 0.0])
-    energy = 1E6 #eV
-    velocity = math.sqrt(energy / ionElement.mass) * np.array([1.0, 0.0, 0.0])
+    ionEnergy = float(arguments['--ionEnergy'])
+    velocity = math.sqrt(ionEnergy / ionElement.mass) * np.array([1.0, 0.0, 0.0])
     ion = Ion(position, velocity, ionElement)
 
     # Define the target material
@@ -204,5 +207,6 @@ if __name__ == "__main__":
     ionStatistics.consolidate(comm)
     
     if (rank == 0):
-        ionStatistics.to_csv('temp.csv')
+        outputFilename = arguments['FILE']
+        ionStatistics.to_csv(outputFilename)
 
