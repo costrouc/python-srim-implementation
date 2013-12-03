@@ -42,7 +42,7 @@ def plotDistribution(inputfilename, outputfilename):
     # Plot 2D histogram using pcolor
     # fig2 = plt.figure()
     fig, ax = plt.subplots(1, 3)
-    fig.set_size_inches((14,4.5))
+    fig.set_size_inches((12,4))
     ax[0].pcolormesh(xedges,yedges,Hmaskedxy)
     ax[0].set_xlabel('x')
     ax[0].set_ylabel('y')

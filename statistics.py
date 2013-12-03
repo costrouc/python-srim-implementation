@@ -1,6 +1,4 @@
-import pandas as pd
 import mpi4py as MPI
-
 
 class IonStatistics:
     """
@@ -21,15 +19,6 @@ class IonStatistics:
         self.ids = comm.gather(self.ids, root=0)
         self.positions = comm.gather(self.positions, root=0)
         self.velocities = comm.gather(self.velocities, root=0)
-        """
-        temp_ids = [item for sublist in self.ids for item in sublist] 
-        temp_pos = [item for sublist in self.positions for item in sublist] 
-        temp_vel = [item for sublist in self.velocities for item in sublist] 
-
-        self.ids = temp_ids
-        self.positions = temp_pos
-        self.velocities = temp_vel
-        """
         
     def to_csv(self, filename = 'tmp.csv'):
         outputFile = open(filename, 'w')
@@ -42,5 +31,3 @@ class IonStatistics:
                                   self.velocities[job][i][0], self.velocities[job][i][1],
                                   self.velocities[job][i][2]))
         outputFile.close()
-        
-
