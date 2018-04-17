@@ -1,3 +1,5 @@
+**Depriciated** I have automated SRIM calculations in [this package https://gitlab.com/costrouc/srim-python](https://gitlab.com/costrouc/srim-python)
+
 # PySrim
 
 PySrim is a code written in python to simulate via Monte Carlo ion treveling through a target. The ions are stopped through the collisions of ions with the nucleus of an atom within the material and excitation of the electron clouds of each atom.
